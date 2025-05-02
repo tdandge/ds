@@ -1,0 +1,291 @@
+**************Ass 1*********************
+
+import java.rmi.*;
+public class AddClient {
+public static void main(String args[]) {
+try {
+String addServerURL = "rmi://" + args[0] + "/AddServer";
+AddServerIntf addServerIntf =
+(AddServerIntf)Naming.lookup(addServerURL);
+System.out.println("The first number is: " + args[1]);
+double d1 = Double.valueOf(args[1]).doubleValue(); System.out.println("The second number is: " +
+args[2]);
+double d2 = Double.valueOf(args[2]).doubleValue(); System.out.println("The sum is: " +
+addServerIntf.add(d1,
+d2));
+}
+catch(Exception e) { System.out.println("Exception: " + e);
+}
+}
+}
+
+//Program for AddServer
+import java.net.*;
+import java.rmi.*;
+public class AddServer {
+public static void main(String args[]) {
+try {
+AddServerImpl addServerImpl = new AddServerImpl(); Naming.rebind("AddServer", addServerImpl);
+System.out.println("in server side");
+}
+catch(Exception e) { System.out.println("Exception: " + e);
+}
+}
+}
+
+//Program for AddServerImpl
+import java.rmi.*;
+import java.rmi.server.*;
+public class AddServerImpl extends UnicastRemoteObject implements
+AddServerIntf {
+public AddServerImpl() throws RemoteException {
+}
+public double add(double d1, double d2) throws RemoteException { return d1 + d2;
+}
+}
+
+//Program for AddServerIntf
+import java.rmi.*;
+public interface AddServerIntf extends Remote {
+double add(double d1, double d2) throws RemoteException;
+}
+
+************buuly********
+import java.util.*;
+
+class Process {
+    int id;
+    boolean active;
+
+    Process(int id) {
+        this.id = id;
+        this.active = true;
+    }
+}
+
+public class BullyAlgorithm {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Enter number of processes: ");
+        int n = sc.nextInt();
+        Process[] processes = new Process[n];
+
+        // Input process IDs
+        for (int i = 0; i < n; i++) {
+            System.out.print("Enter ID for process " + i + ": ");
+            processes[i] = new Process(sc.nextInt());
+        }
+
+        // Find and simulate failure of highest ID process
+        int maxID = -1, maxIndex = -1;
+        for (int i = 0; i < n; i++) {
+            if (processes[i].id > maxID) {
+                maxID = processes[i].id;
+                maxIndex = i;
+            }
+        }
+        processes[maxIndex].active = false;
+        System.out.println("Process with ID " + maxID + " has failed.");
+
+        // Start election from user-specified process
+        System.out.print("Enter index of process to start election: ");
+        int starter = sc.nextInt();
+        if (!processes[starter].active) {
+            System.out.println("Selected process is inactive. Cannot start election.");
+            return;
+        }
+
+        System.out.println("Process " + processes[starter].id + " is starting election...");
+        int coordinatorID = -1;
+        for (Process p : processes) {
+            if (p.active && p.id > processes[starter].id) {
+                System.out.println("Process " + processes[starter].id + " sends message to " + p.id);
+            }
+        }
+
+        // Elect highest active process as coordinator
+        for (Process p : processes) {
+            if (p.active && p.id > coordinatorID) {
+                coordinatorID = p.id;
+            }
+        }
+
+        System.out.println("New Coordinator is Process with ID " + coordinatorID);
+        sc.close();
+    }
+}
+
+***************Ring***************
+import java.util.*;
+
+public class Ring {
+    static class Process {
+        int id;
+        boolean isActive;
+
+        Process(int id) {
+            this.id = id;
+            this.isActive = true;
+        }
+    }
+
+    static int n; // number of processes
+    static Process[] processes;
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        // Input number of processes
+        System.out.print("Enter number of processes: ");
+        n = sc.nextInt();
+        processes = new Process[n];
+
+        // Input process IDs
+        System.out.println("Enter process IDs:");
+        for (int i = 0; i < n; i++) {
+            int id = sc.nextInt();
+            processes[i] = new Process(id);
+        }
+
+        // Input initiator of election
+        System.out.print("Enter the index of process initiating election (0 to " + (n-1) + "): ");
+        int initiator = sc.nextInt();
+
+        if (!processes[initiator].isActive) {
+            System.out.println("Initiator process is not active.");
+            return;
+        }
+
+        int electedLeader = ringElection(initiator);
+        System.out.println("Leader elected with Process ID: " + electedLeader);
+    }
+
+    static int ringElection(int initiator) {
+        List<Integer> electionMessage = new ArrayList<>();
+        int current = initiator;
+
+        do {
+            if (processes[current].isActive) {
+                electionMessage.add(processes[current].id);
+            }
+            current = (current + 1) % n;
+        } while (current != initiator);
+
+        int leaderId = Collections.max(electionMessage);
+
+        // Broadcasting coordinator message
+        System.out.println("Election Message: " + electionMessage);
+        System.out.println("Broadcasting Coordinator Message with Leader ID: " + leaderId);
+
+        return leaderId;
+    }
+}
+
+***********Berkeley***************
+import java.util.Scanner;
+
+public class Berkeley {
+
+    public static void main(String[] args) {
+        Scanner input = new Scanner(System.in);
+
+        // Step 1: Input number of processes (including master)
+        System.out.print("Enter number of processes (including master process): ");
+        int numProcesses = input.nextInt();
+
+        int[] clockTimes = new int[numProcesses]; // Array to store current clock times
+        int[] timeDifferences = new int[numProcesses]; // Differences from master
+
+        // Step 2: Input current clock times of all processes
+        System.out.println("Enter clock times (in seconds) for each process:");
+        for (int i = 0; i < numProcesses; i++) {
+            System.out.print("Process " + i + ": ");
+            clockTimes[i] = input.nextInt();
+        }
+
+        // Step 3: Assume process 0 is the master
+        int masterClock = clockTimes[0];
+        int totalDifference = 0;
+
+        // Step 4: Calculate time differences and total (excluding master)
+        for (int i = 1; i < numProcesses; i++) {
+            timeDifferences[i] = clockTimes[i] - masterClock;
+            totalDifference += timeDifferences[i];
+        }
+
+        // Step 5: Compute average difference
+        int averageDifference = totalDifference / (numProcesses - 1);
+
+        System.out.println("\nMaster clock: " + masterClock + " seconds");
+        System.out.println("Total difference (excluding master): " + totalDifference + " seconds");
+        System.out.println("Average adjustment: " + averageDifference + " seconds\n");
+
+        // Step 6: Compute new times
+        System.out.println("Synchronized clock times:");
+        for (int i = 0; i < numProcesses; i++) {
+            if (i == 0) {
+                // Adjust master clock too (optional)
+                clockTimes[i] += averageDifference;
+            } else {
+                // Adjust each clock by (average - its offset from master)
+                clockTimes[i] += (averageDifference - timeDifferences[i]);
+            }
+            System.out.println("Process " + i + ": " + clockTimes[i] + " seconds");
+        }
+    }
+    }
+
+    **************Token ring**************
+    import java.util.Scanner;
+
+class Tring {
+    public static void main(String args[]) {
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Enter the number of nodes: ");
+        int n = sc.nextInt();
+        int token = 0;
+
+        System.out.print("Nodes in Ring:");
+        for (int i = 0; i < n; i++)
+            System.out.print(" " + i);
+        System.out.println();
+
+        try {
+            while (true) {
+                System.out.print("\nEnter sender (-1 to exit): ");
+                int s = sc.nextInt();
+                if (s == -1) break;
+
+                System.out.print("Enter receiver: ");
+                int r = sc.nextInt();
+
+                sc.nextLine(); // consume leftover newline
+                System.out.print("Enter Data: ");
+                String d = sc.nextLine();
+
+                if (s >= n || r >= n || s < 0 || r < 0) {
+                    System.out.println("Invalid sender or receiver. Try again.");
+                    continue;
+                }
+
+                System.out.print("Token passing:");
+                for (int i = token; i != s; i = (i + 1) % n) {
+                    System.out.print(" " + i + " ->");
+                }
+                System.out.println(" " + s);
+
+                System.out.println("Sender " + s + " sending data: " + d);
+                for (int i = (s + 1) % n; i != r; i = (i + 1) % n) {
+                    System.out.println("Data " + d + " forwarded by " + i);
+                }
+
+                System.out.println("Receiver " + r + " received data: " + d);
+                token = s; // token moves to sender after sending
+            }
+        } catch (Exception e) {
+            System.out.println("Error occurred: " + e.getMessage());
+        }
+
+        sc.close();
+    }
+}
